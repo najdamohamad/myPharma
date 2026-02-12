@@ -29,7 +29,7 @@ export function createMedicineItem(input: MedicineItemInput): MedicineItem {
     dosage: input.dosage?.trim(),
     expiryDate: input.expiryDate?.trim(),
     notes: input.notes?.trim(),
-    createdAt: input.id ? now : now,
+    createdAt: now,
     updatedAt: now,
   };
 }
@@ -42,9 +42,11 @@ export function updateMedicineItem(
   updates: Partial<MedicineItemInput>
 ): MedicineItem {
   const updatedAt = new Date().toISOString();
+  const { id: _ignoredId, ...safeUpdates } = updates;
   return {
     ...existing,
-    ...updates,
+    ...safeUpdates,
+    id: existing.id,
     name: (updates.name ?? existing.name).trim(),
     dosage: updates.dosage !== undefined ? updates.dosage?.trim() : existing.dosage,
     expiryDate: updates.expiryDate !== undefined ? updates.expiryDate?.trim() : existing.expiryDate,
