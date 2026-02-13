@@ -1,102 +1,167 @@
+import { Image } from 'expo-image';
 import React from 'react';
 import {
   Pressable,
   StyleSheet,
   View,
+  type ImageSourcePropType,
 } from 'react-native';
 
-const STATUS_DOT_COLORS = {
-  red: '#E53935',
-  amber: '#FFB300',
-  blue: '#2196F3',
-} as const;
-
 type MedicineBoxProps = {
+  imageSource?: ImageSourcePropType;
+  statusDot?: 'red' | 'amber' | 'blue' | null;
   onPress?: () => void;
-  statusDot?: 'red' | 'amber' | 'blue';
 };
 
-export default function MedicineBox({ onPress, statusDot }: MedicineBoxProps) {
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.touchable, pressed && styles.touchablePressed]}
-      onPress={onPress}
-    >
-      <View style={styles.shadowWrap}>
-        <View style={styles.box}>
-          <View style={styles.gradientBase} />
-          <View style={styles.gradientShine} />
-          <View style={styles.highlightStrip} />
-          {statusDot ? (
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: STATUS_DOT_COLORS[statusDot] },
-              ]}
-            />
-          ) : null}
-        </View>
+const STATUS_COLORS = {
+  red: '#FF3B30',
+  amber: '#FF9500',
+  blue: '#007AFF',
+} as const;
+
+export default function MedicineBox({
+  imageSource,
+  statusDot,
+  onPress,
+}: MedicineBoxProps) {
+  const content = (
+    <View style={styles.boxContainer}>
+      <View style={styles.boxShadow} />
+      <View style={styles.box}>
+        {imageSource ? (
+          <Image
+            source={imageSource}
+            style={styles.boxImage}
+            contentFit="contain"
+          />
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <View style={styles.placeholderBase} />
+            <View style={styles.placeholderGradient1} />
+            <View style={styles.placeholderGradient2} />
+            <View style={styles.placeholderLeftEdge} />
+            <View style={styles.placeholderTopEdge} />
+          </View>
+        )}
+        {statusDot && (
+          <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[statusDot] }]} />
+        )}
       </View>
-    </Pressable>
+    </View>
   );
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [pressed && styles.pressed]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return content;
 }
 
+const BOX_WIDTH = 64;
+const BOX_HEIGHT = 80;
+const ASPECT_RATIO = BOX_HEIGHT / BOX_WIDTH;
+
 const styles = StyleSheet.create({
-  touchable: {
-    width: '90%',
-    aspectRatio: 0.58,
-    alignSelf: 'center',
-    maxWidth: 56,
+  boxContainer: {
+    width: BOX_WIDTH,
+    height: BOX_HEIGHT,
+    aspectRatio: ASPECT_RATIO,
+    position: 'relative',
   },
-  touchablePressed: {
-    opacity: 0.92,
-  },
-  shadowWrap: {
-    flex: 1,
-    borderRadius: 6,
+  boxShadow: {
+    position: 'absolute',
+    left: 2,
+    right: -2,
+    top: 2,
+    bottom: -2,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
   },
   box: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
-  gradientBase: {
+  boxImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+    backgroundColor: '#F8F8F8',
+  },
+  placeholderBase: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(240, 245, 252, 0.98)',
+    backgroundColor: '#F0F0F0',
   },
-  gradientShine: {
+  placeholderGradient1: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: '55%',
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
-  highlightStrip: {
+  placeholderGradient2: {
     position: 'absolute',
-    top: 6,
+    top: 0,
     left: 0,
-    bottom: 6,
-    width: 2,
-    borderTopRightRadius: 1,
-    borderBottomRightRadius: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    width: '60%',
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  placeholderLeftEdge: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  placeholderTopEdge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   statusDot: {
     position: 'absolute',
     top: 4,
     right: 4,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
 });
