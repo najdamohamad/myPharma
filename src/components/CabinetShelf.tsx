@@ -1,11 +1,21 @@
 import React from 'react';
 import {
+  Dimensions,
   StyleSheet,
   View,
   type ViewStyle,
 } from 'react-native';
 
 const SLOT_COUNT = 5;
+const WRAPPER_MARGIN_H = 16;
+const GAP_BETWEEN_SLOTS = 8;
+
+function getSlotWidth(): number {
+  const screenWidth = Dimensions.get('window').width;
+  const availableWidth = screenWidth - WRAPPER_MARGIN_H * 2;
+  const totalGapSpace = (SLOT_COUNT - 1) * GAP_BETWEEN_SLOTS;
+  return Math.floor((availableWidth - totalGapSpace) / SLOT_COUNT);
+}
 
 type CabinetShelfProps = {
   slots: React.ReactNode[];
@@ -18,12 +28,22 @@ export default function CabinetShelf({ slots, style }: CabinetShelfProps) {
     normalized.push(null);
   }
   const slotsToRender = normalized.slice(0, SLOT_COUNT);
+  const slotWidth = getSlotWidth();
 
   return (
     <View style={[styles.wrapper, style]}>
       <View style={styles.slotsRow}>
         {slotsToRender.map((slot, index) => (
-          <View key={index} style={styles.slot}>
+          <View
+            key={index}
+            style={[
+              styles.slot,
+              {
+                width: slotWidth,
+                marginRight: index === SLOT_COUNT - 1 ? 0 : GAP_BETWEEN_SLOTS,
+              },
+            ]}
+          >
             {slot}
           </View>
         ))}
@@ -49,13 +69,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   slot: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingTop: 12,
     paddingBottom: 6,
-    paddingHorizontal: 4,
+    paddingHorizontal: 0,
     minHeight: 56,
+    overflow: 'hidden',
   },
   glassWrapper: {
     width: '100%',
