@@ -26,26 +26,33 @@ export default function MedicineBox({
 }: MedicineBoxProps) {
   const content = (
     <View style={styles.boxContainer}>
-      <View style={styles.boxShadow} />
-      <View style={styles.box}>
-        {imageSource ? (
-          <Image
-            source={imageSource}
-            style={styles.boxImage}
-            contentFit="contain"
-          />
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <View style={styles.placeholderBase} />
-            <View style={styles.placeholderGradient1} />
-            <View style={styles.placeholderGradient2} />
-            <View style={styles.placeholderLeftEdge} />
-            <View style={styles.placeholderTopEdge} />
-          </View>
-        )}
-        {statusDot && (
-          <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[statusDot] }]} />
-        )}
+      <View style={styles.shelfShadow} />
+      <View style={styles.boxRow}>
+        <View style={styles.frontFace}>
+          <View style={styles.topHighlight} />
+          {imageSource ? (
+            <Image
+              source={imageSource}
+              style={styles.boxImage}
+              contentFit="contain"
+            />
+          ) : (
+            <View style={styles.placeholderContainer}>
+              <View style={styles.placeholderLeftEdge} />
+              <View style={styles.placeholderMain}>
+                <View style={styles.placeholderTopEdge} />
+                <View style={styles.placeholderGradientRow}>
+                  <View style={styles.placeholderGradient1} />
+                  <View style={styles.placeholderGradient2} />
+                </View>
+              </View>
+            </View>
+          )}
+          {statusDot && (
+            <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[statusDot] }]} />
+          )}
+        </View>
+        <View style={styles.rightSideFace} />
       </View>
     </View>
   );
@@ -54,96 +61,105 @@ export default function MedicineBox({
     return (
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [pressed && styles.pressed]}
+        style={({ pressed }) => [styles.slotChild, pressed && styles.pressed]}
       >
         {content}
       </Pressable>
     );
   }
 
-  return content;
+  return <View style={styles.slotChild}>{content}</View>;
 }
 
-const BOX_WIDTH = 64;
-const BOX_HEIGHT = 80;
-const ASPECT_RATIO = BOX_HEIGHT / BOX_WIDTH;
+const ASPECT_RATIO = 3 / 4;
 
 const styles = StyleSheet.create({
   boxContainer: {
-    width: BOX_WIDTH,
-    height: BOX_HEIGHT,
+    width: '100%',
     aspectRatio: ASPECT_RATIO,
     position: 'relative',
   },
-  boxShadow: {
+  shelfShadow: {
     position: 'absolute',
-    left: 2,
-    right: -2,
-    top: 2,
-    bottom: -2,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    left: -4,
+    right: -4,
+    bottom: -4,
+    height: 6,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  box: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF',
+  boxRow: {
+    flex: 1,
+    flexDirection: 'row',
+    minHeight: 0,
+  },
+  frontFace: {
+    flex: 1,
+    borderRadius: 4,
+    backgroundColor: '#fdfdfd',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
     overflow: 'hidden',
     position: 'relative',
   },
+  topHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    zIndex: 1,
+  },
+  rightSideFace: {
+    width: 7,
+    marginLeft: -1,
+    backgroundColor: '#e6e6e6',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+  },
   boxImage: {
-    width: '100%',
-    height: '100%',
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 4,
   },
   placeholderContainer: {
     width: '100%',
-    height: '100%',
-    position: 'relative',
-    backgroundColor: '#F8F8F8',
-  },
-  placeholderBase: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
+    minHeight: 0,
+    flexDirection: 'row',
     backgroundColor: '#F0F0F0',
   },
-  placeholderGradient1: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  placeholderGradient2: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '60%',
-    height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
   placeholderLeftEdge: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
     width: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
+  placeholderMain: {
+    flex: 1,
+    minHeight: 0,
+  },
   placeholderTopEdge: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     height: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  placeholderGradientRow: {
+    flex: 1,
+    minHeight: 0,
+    flexDirection: 'row',
+  },
+  placeholderGradient1: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  placeholderGradient2: {
+    flex: 0.67,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   statusDot: {
     position: 'absolute',
@@ -159,6 +175,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
+  },
+  slotChild: {
+    width: '100%',
   },
   pressed: {
     opacity: 0.85,
