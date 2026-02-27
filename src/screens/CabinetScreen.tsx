@@ -36,7 +36,7 @@ function chunk<T>(array: T[], size: number): T[][] {
   }
   return chunks;
 }
-
+// get status dot 
 function getStatusDot(item: MedicineBoxItem): 'red' | 'amber' | 'blue' | null {
   if (item.scheduledDaily) {
     return 'blue';
