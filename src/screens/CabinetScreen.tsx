@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -8,52 +8,50 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AddMedicineModal from '@/src/components/AddMedicineModal';
 import CabinetShelf from '@/src/components/CabinetShelf';
-import MedicineBox from '@/src/components/MedicineBox';
 import MedicineCutout from '@/src/components/MedicineCutout';
 import MedicineDetailsSheet from '@/src/components/MedicineDetailsSheet';
-import { mockMedicines, type MedicineBoxItem } from '@/src/data/mockMedicines';
+import { catalogItems, type CabinetItem } from '@/src/data/catalog';
 
 const ROOM_BG = '#EEF1F4';
-const SHELF_SIZE = 5;
+const SHELF_COUNT = 8;
+const SLOTS_PER_SHELF = 5;
+const TOTAL_SLOTS = SHELF_COUNT * SLOTS_PER_SHELF;
 
-const CUTOUT_PARACETAMOL = require('../../assets/images/medicines/Paracetamol.png');
-const CUTOUT_IBUPROFENE = require('../../assets/images/medicines/Ibuprofene.png');
-const CUTOUT_BOX6 = require('../../assets/images/medicines/box_6_cutout.png');
-const CUTOUT_ANTIHISTAMINIQUE = require('../../assets/images/medicines/Antihistaminique.png');
-
-const CUTOUT_SOURCES = [
-  CUTOUT_PARACETAMOL,
-  CUTOUT_IBUPROFENE,
-  CUTOUT_BOX6,
-  CUTOUT_ANTIHISTAMINIQUE,
-] as const;
-
-function chunk<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size));
+function buildShelvesSlots(
+  cabinetItems: CabinetItem[],
+  onItemPress: (item: CabinetItem) => void
+): ReactNode[][] {
+  const slots: ReactNode[] = [];
+  for (let i = 0; i < TOTAL_SLOTS; i++) {
+    const item = cabinetItems[i] ?? null;
+    if (item) {
+      slots.push(
+        <Pressable
+          key={item.id}
+          onPress={() => onItemPress(item)}
+          style={({ pressed }) => [
+            { width: '100%', opacity: pressed ? 0.9 : 1 },
+          ]}
+        >
+          <MedicineCutout
+            source={item.imageSource}
+            statusDot={item.statusDot ?? null}
+          />
+        </Pressable>
+      );
+    } else {
+      slots.push(null);
+    }
   }
-  return chunks;
-}
-// get status dot 
-function getStatusDot(item: MedicineBoxItem): 'red' | 'amber' | 'blue' | null {
-  if (item.scheduledDaily) {
-    return 'blue';
+  const shelvesSlots: ReactNode[][] = [];
+  for (let s = 0; s < SHELF_COUNT; s++) {
+    shelvesSlots.push(
+      slots.slice(s * SLOTS_PER_SHELF, (s + 1) * SLOTS_PER_SHELF)
+    );
   }
-  if (!item.expiryDate) {
-    return null;
-  }
-  const expiry = new Date(item.expiryDate);
-  const now = new Date();
-  const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (daysUntilExpiry < 0) {
-    return 'red';
-  }
-  if (daysUntilExpiry <= 30) {
-    return 'amber';
-  }
-  return null;
+  return shelvesSlots;
 }
 
 export default function CabinetScreen() {
@@ -61,8 +59,26 @@ export default function CabinetScreen() {
   const [viewportH, setViewportH] = useState(0);
   const [contentH, setContentH] = useState(0);
   const didCenterRef = useRef(false);
-  const [selectedMedicine, setSelectedMedicine] = useState<MedicineBoxItem | null>(null);
-  const shelves = chunk(mockMedicines, SHELF_SIZE);
+  const [cabinetItems, setCabinetItems] = useState<CabinetItem[]>([]);
+  const [selectedMedicine, setSelectedMedicine] = useState<CabinetItem | null>(null);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+
+  const openDetails = useCallback((item: CabinetItem) => {
+    setSelectedMedicine(item);
+  }, []);
+
+  const shelvesSlots = buildShelvesSlots(cabinetItems, openDetails);
+
+  const handleAddMedicine = useCallback((catalogItem: typeof catalogItems[0]) => {
+    const newItem: CabinetItem = {
+      id: Date.now().toString(),
+      name: catalogItem.name,
+      subtitle: catalogItem.subtitle,
+      statusDot: catalogItem.statusDot ?? null,
+      imageSource: catalogItem.imageSource,
+    };
+    setCabinetItems((prev) => [...prev, newItem]);
+  }, []);
 
   const tryCenter = useCallback(() => {
     if (didCenterRef.current) return;
@@ -101,41 +117,12 @@ export default function CabinetScreen() {
             <View style={styles.topGlowLayer1} />
             <View style={styles.topGlowLayer2} />
           </View>
-          {shelves.map((shelfItems, shelfIndex) => (
-          <CabinetShelf
-            key={shelfIndex}
-            slots={shelfItems.map((item, slotIndex) => {
-              const globalIndex = shelfIndex * SHELF_SIZE + slotIndex;
-              const useCutout = globalIndex < CUTOUT_SOURCES.length;
-
-              if (useCutout) {
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => setSelectedMedicine(item)}
-                    style={({ pressed }) => [
-                      { width: '100%', opacity: pressed ? 0.9 : 1 },
-                    ]}
-                  >
-                    <MedicineCutout
-                      source={CUTOUT_SOURCES[globalIndex]}
-                      statusDot={getStatusDot(item)}
-                    />
-                  </Pressable>
-                );
-              }
-
-              return (
-                <MedicineBox
-                  key={item.id}
-                  imageSource={item.imageSource}
-                  statusDot={getStatusDot(item)}
-                  onPress={() => setSelectedMedicine(item)}
-                />
-              );
-            })}
-          />
-        ))}
+          {shelvesSlots.map((slotNodes, shelfIndex) => (
+            <CabinetShelf
+              key={shelfIndex}
+              slots={slotNodes}
+            />
+          ))}
         </ScrollView>
         <View style={styles.cabinetOverlays} pointerEvents="none">
           <View style={styles.leftSideWall} />
@@ -150,26 +137,28 @@ export default function CabinetScreen() {
             <View style={styles.gradientStrip2} />
             <View style={styles.gradientStrip3} />
           </View>
-          <View style={styles.vignetteTopLeft} />
-          <View style={styles.vignetteTopRight} />
-          <View style={styles.vignetteBottomLeft} />
-          <View style={styles.vignetteBottomRight} />
           <View style={styles.innerShadowLeft} />
           <View style={styles.innerShadowRight} />
         </View>
       </View>
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={() => console.log('add pressed')}
+        onPress={() => setAddModalVisible(true)}
       >
         <Text style={styles.fabLabel}>+</Text>
       </Pressable>
+      <AddMedicineModal
+        visible={addModalVisible}
+        catalogItems={catalogItems}
+        onSelect={handleAddMedicine}
+        onClose={() => setAddModalVisible(false)}
+      />
       <MedicineDetailsSheet
         visible={selectedMedicine !== null}
         medicineName={selectedMedicine?.name ?? ''}
-        medicineStrength={selectedMedicine?.strength}
+        medicineStrength={selectedMedicine?.subtitle}
         imageSource={selectedMedicine?.imageSource}
-        statusDot={selectedMedicine ? getStatusDot(selectedMedicine) : null}
+        statusDot={selectedMedicine?.statusDot ?? null}
         onClose={() => setSelectedMedicine(null)}
       />
     </SafeAreaView>
@@ -272,42 +261,6 @@ const styles = StyleSheet.create({
     width: 8,
     flex: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.004)',
-  },
-  vignetteTopLeft: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: 80,
-    height: 80,
-    borderTopLeftRadius: 80,
-    backgroundColor: 'rgba(0, 0, 0, 0.012)',
-  },
-  vignetteTopRight: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 80,
-    height: 80,
-    borderTopRightRadius: 80,
-    backgroundColor: 'rgba(0, 0, 0, 0.012)',
-  },
-  vignetteBottomLeft: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: 80,
-    height: 80,
-    borderBottomLeftRadius: 80,
-    backgroundColor: 'rgba(0, 0, 0, 0.012)',
-  },
-  vignetteBottomRight: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 80,
-    height: 80,
-    borderBottomRightRadius: 80,
-    backgroundColor: 'rgba(0, 0, 0, 0.012)',
   },
   innerShadowLeft: {
     position: 'absolute',
