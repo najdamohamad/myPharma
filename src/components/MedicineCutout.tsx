@@ -21,19 +21,19 @@ export default function MedicineCutout({
     <View style={styles.outer}>
       <View style={styles.container}>
         <View style={styles.imageWrapper}>
-        <Image
-          source={source}
-          style={styles.image}
-          contentFit="contain"
-        />
+          <Image
+            source={source}
+            style={styles.image}
+            contentFit="contain"
+          />
         </View>
         <View style={styles.shadow} />
+      </View>
       {statusDot && (
         <View
           style={[styles.statusDot, { backgroundColor: STATUS_COLORS[statusDot] }]}
         />
       )}
-      </View>
     </View>
   );
 }
@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
   outer: {
     width: '100%',
     aspectRatio: 3 / 4,
+    position: 'relative',
   },
   container: {
     width: '100%',
@@ -49,23 +50,23 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     overflow: 'hidden',
-    paddingBottom: 5,
+    paddingBottom: 1,
     position: 'relative',
   },
   shadow: {
-    height: 6,
+    height: 4,
     width: '60%',
     borderRadius: 4,
     backgroundColor: 'rgba(0, 0, 0, 0.12)',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   imageWrapper: {
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
     minHeight: 0,
-    width: '85%',
-    maxHeight: '90%',
+    width: '92%',
+    maxHeight: '96%',
   },
   image: {
     width: '100%',
@@ -78,5 +79,6 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 5,
+    zIndex: 10,
   },
 });

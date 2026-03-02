@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import type { ImageSourcePropType } from 'react-native';
 import {
   Animated,
   Dimensions,
@@ -8,9 +9,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { ImageSourcePropType } from 'react-native';
 
 import MedicineBox from '@/src/components/MedicineBox';
+import MedicineCutout from '@/src/components/MedicineCutout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.65;
@@ -118,10 +119,19 @@ export default function MedicineDetailsSheet({
           <View style={styles.handle} />
           <View style={styles.boxPreview}>
             <View style={styles.boxWrapper}>
-              <MedicineBox
-                imageSource={imageSource}
-                statusDot={statusDot}
-              />
+              {imageSource ? (
+                <View style={styles.cutoutWrapper}>
+                  <MedicineCutout
+                    source={imageSource}
+                    statusDot={statusDot}
+                  />
+                </View>
+              ) : (
+                <MedicineBox
+                  imageSource={imageSource}
+                  statusDot={statusDot}
+                />
+              )}
             </View>
           </View>
           <Text style={[styles.medicineName, !statusLabel && styles.medicineNameNoStatus]}>
@@ -189,14 +199,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   boxPreview: {
-    width: 120,
-    height: 160,
+    width: 140,
+    height: 180,
     marginBottom: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   boxWrapper: {
-    width: 100,
+    width: 140,
+    height: 180,
+  },
+  cutoutWrapper: {
+    width: 135,
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   medicineName: {
     fontSize: 22,
