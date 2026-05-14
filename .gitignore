@@ -44,3 +44,5 @@ app-example
 
 # boxscanner debug output
 **/medicines/_debug/
+tools/boxscanner/.venv/
+**/.venv/
