@@ -35,6 +35,30 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+## Add medicine by barcode
+
+In the app, tap **+** → **Scan barcode** to scan a medicine box barcode. The app will:
+
+1. Look up the product name (UPCItemDB trial API)
+2. Fetch 3 candidate box images from the web (DuckDuckGo)
+3. Run background removal and show cutouts for you to pick
+
+**Requirements for barcode → candidates flow:**
+
+1. Install Python deps: `pip install -r boxscanner/medicine-cutouts/requirements.txt` and `pip install -r boxscanner/medicine-images/requirements.txt`
+2. Start the boxscanner API: `npm run api` (in a separate terminal)
+3. For physical device: set `EXPO_PUBLIC_BOXSCANNER_API=http://YOUR_IP:3912` so the app can reach the API
+
+## Medicine cutouts (boxscanner)
+
+To process raw medicine photos into transparent PNG cutouts for the cabinet:
+
+1. Install Python dependencies: `pip install -r boxscanner/medicine-cutouts/requirements.txt`
+2. Get images: either place raw photos (jpg/png) in `boxscanner/raw/`, or run `npm run fetch-images -- "Medicine Name"` to fetch top 3 candidate images from the web
+3. Run: `npm run process-cutouts`
+
+Output goes to `assets/images/medicines/`. See [boxscanner/README.md](boxscanner/README.md) for details.
+
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:

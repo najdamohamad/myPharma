@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -8,13 +8,17 @@ import {
   View,
 } from 'react-native';
 
+import BarcodeScannerModal from '@/src/components/BarcodeScannerModal';
+import CandidateSelectionModal from '@/src/components/CandidateSelectionModal';
 import MedicineCutout from '@/src/components/MedicineCutout';
-import type { CatalogItem } from '@/src/data/catalog';
+import type { CabinetItem, CatalogItem } from '@/src/data/catalog';
+import { fetchCandidates, type CandidateImage } from '@/src/services/fetchCandidates';
+import { lookupBarcode } from '@/src/services/barcodeLookup';
 
 type AddMedicineModalProps = {
   visible: boolean;
   catalogItems: CatalogItem[];
-  onSelect: (item: CatalogItem) => void;
+  onSelect: (item: CabinetItem) => void;
   onClose: () => void;
 };
 
@@ -48,45 +52,151 @@ export default function AddMedicineModal({
   onSelect,
   onClose,
 }: AddMedicineModalProps) {
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [candidateModalVisible, setCandidateModalVisible] = useState(false);
+  const [medicineName, setMedicineName] = useState('');
+  const [candidates, setCandidates] = useState<CandidateImage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleBarcodeScanned = useCallback(
+    async (barcode: string) => {
+      setScannerVisible(false);
+      setLoading(true);
+      setError(null);
+      setCandidateModalVisible(true);
+      setMedicineName('');
+
+      try {
+        const lookup = await lookupBarcode(barcode);
+        if (!lookup.success) {
+          setError(lookup.error);
+          setLoading(false);
+          return;
+        }
+
+        setMedicineName(lookup.name);
+
+        const fetchResult = await fetchCandidates(lookup.name);
+        setLoading(false);
+        if (!fetchResult.success) {
+          setError(fetchResult.error);
+          return;
+        }
+        setCandidates(fetchResult.candidates);
+      } catch (e) {
+        setLoading(false);
+        setError(e instanceof Error ? e.message : 'Something went wrong');
+      }
+    },
+    []
+  );
+
+  const handleCandidateSelect = useCallback(
+    (candidate: CandidateImage) => {
+      const newItem: CabinetItem = {
+        id: `scanned-${Date.now()}`,
+        name: medicineName,
+        subtitle: undefined,
+        statusDot: null,
+        imageSource: { uri: candidate.url },
+      };
+      onSelect(newItem);
+      setCandidateModalVisible(false);
+      onClose();
+    },
+    [medicineName, onSelect, onClose]
+  );
+
+  const handleCatalogSelect = useCallback(
+    (item: CatalogItem) => {
+      const newItem: CabinetItem = {
+        id: Date.now().toString(),
+        name: item.name,
+        subtitle: item.subtitle,
+        statusDot: item.statusDot ?? null,
+        imageSource: item.imageSource,
+      };
+      onSelect(newItem);
+      onClose();
+    },
+    [onSelect, onClose]
+  );
+
   if (!visible) {
     return null;
   }
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Add a medicine</Text>
-          <FlatList
-            data={catalogItems}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CatalogRow
-                item={item}
-                onPress={() => {
-                  onSelect(item);
-                  onClose();
-                }}
-              />
-            )}
-            style={styles.list}
-            contentContainerStyle={styles.listContent}
-          />
+    <>
+      <Modal
+        visible={visible && !scannerVisible && !candidateModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.overlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          <View style={styles.sheet}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>Add a medicine</Text>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.scanRow,
+                pressed && styles.rowPressed,
+              ]}
+              onPress={() => setScannerVisible(true)}
+            >
+              <View style={styles.scanIconBox}>
+                <Text style={styles.scanIcon}>📷</Text>
+              </View>
+              <View style={styles.scanTextContainer}>
+                <Text style={styles.scanRowTitle}>Scan barcode</Text>
+                <Text style={styles.scanRowSubtitle}>
+                  Point camera at medicine box barcode
+                </Text>
+              </View>
+            </Pressable>
+
+            <Text style={styles.sectionTitle}>Or choose from catalog</Text>
+            <FlatList
+              data={catalogItems}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <CatalogRow
+                  item={item}
+                  onPress={() => handleCatalogSelect(item)}
+                />
+              )}
+              style={styles.list}
+              contentContainerStyle={styles.listContent}
+            />
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <BarcodeScannerModal
+        visible={scannerVisible}
+        onScanned={handleBarcodeScanned}
+        onClose={() => setScannerVisible(false)}
+      />
+
+      <CandidateSelectionModal
+        visible={candidateModalVisible}
+        medicineName={medicineName}
+        candidates={candidates}
+        loading={loading}
+        error={error}
+        onSelect={handleCandidateSelect}
+        onClose={() => setCandidateModalVisible(false)}
+      />
+    </>
   );
 }
 
 const THUMBNAIL_WIDTH = 48;
-const THUMBNAIL_HEIGHT = 64; // 3:4 aspect ratio
+const THUMBNAIL_HEIGHT = 64;
 
 const styles = StyleSheet.create({
   overlay: {
@@ -116,6 +226,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
     marginBottom: 16,
+  },
+  scanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    marginBottom: 8,
+    backgroundColor: '#f0f9ff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.2)',
+  },
+  scanIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 122, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanIcon: {
+    fontSize: 24,
+  },
+  scanTextContainer: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  scanRowTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  scanRowSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 12,
   },
   list: {
     flexGrow: 0,

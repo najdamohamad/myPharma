@@ -69,15 +69,8 @@ export default function CabinetScreen() {
 
   const shelvesSlots = buildShelvesSlots(cabinetItems, openDetails);
 
-  const handleAddMedicine = useCallback((catalogItem: typeof catalogItems[0]) => {
-    const newItem: CabinetItem = {
-      id: Date.now().toString(),
-      name: catalogItem.name,
-      subtitle: catalogItem.subtitle,
-      statusDot: catalogItem.statusDot ?? null,
-      imageSource: catalogItem.imageSource,
-    };
-    setCabinetItems((prev) => [...prev, newItem]);
+  const handleAddMedicine = useCallback((item: CabinetItem) => {
+    setCabinetItems((prev) => [...prev, item]);
   }, []);
 
   const tryCenter = useCallback(() => {

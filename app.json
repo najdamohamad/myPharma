@@ -26,6 +26,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow MyPharma to access your camera to scan medicine barcodes"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",

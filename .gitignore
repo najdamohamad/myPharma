@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# boxscanner debug output
+**/medicines/_debug/
